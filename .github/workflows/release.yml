@@ -1,0 +1,267 @@
+name: Release
+
+# Push a tag like v0.0.1 to build every platform and publish a GitHub Release.
+# "Run workflow" (manual) builds everything and uploads artifacts, without releasing.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Desktop: Linux x64/arm64, Windows x64, macOS universal
+  # ---------------------------------------------------------------------------
+  build:
+    name: Build ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux-x64
+            os: ubuntu-24.04
+            ext: tar.gz
+          - name: linux-arm64
+            os: ubuntu-24.04-arm   # free for public repositories only
+            ext: tar.gz
+          - name: windows-x64
+            os: windows-latest
+            ext: zip
+          - name: macos-universal  # arm64 + x86_64 in one binary
+            os: macos-latest
+            ext: tar.gz
+            cmake_args: -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install SDL3 build dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake pkg-config git \
+            libasound2-dev libpulse-dev libaudio-dev libfribidi-dev libjack-dev libsndio-dev \
+            libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev \
+            libxi-dev libxss-dev libxtst-dev libxkbcommon-dev \
+            libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev libegl1-mesa-dev \
+            libdbus-1-dev libibus-1.0-dev libudev-dev libthai-dev \
+            libpipewire-0.3-dev libwayland-dev libwayland-bin wayland-protocols \
+            libdecor-0-dev liburing-dev
+
+      # Windows (Visual Studio + CMake) and macOS (Xcode + CMake) runners ship with
+      # everything SDL3 needs, so no install step is required for them.
+      - name: Show toolchain
+        run: |
+          cmake --version
+          git --version
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DNIMBLE_BUNDLE_SDL=ON ${{ matrix.cmake_args }}
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Package
+        run: |
+          VERSION="${GITHUB_REF_NAME//\//-}"
+          NAME="NimbleWood-${VERSION}-${{ matrix.name }}"
+          cmake --install build --config Release --prefix "stage/${NAME}"
+          mkdir -p release
+          cd stage
+          if [ "${{ matrix.ext }}" = "zip" ]; then
+            cmake -E tar cf "../release/${NAME}.zip" --format=zip -- "${NAME}"
+          else
+            cmake -E tar czf "../release/${NAME}.tar.gz" -- "${NAME}"
+          fi
+          cd ..
+          ls -l release
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: NimbleWood-${{ matrix.name }}
+          path: release/*
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------------
+  # Web: Emscripten -> index.html + index.js + index.wasm
+  # ---------------------------------------------------------------------------
+  build-web:
+    name: Build web
+    runs-on: ubuntu-24.04
+    env:
+      EMSDK_VERSION: latest   # SDL recommends the latest stable Emscripten; pin e.g. 4.0.10 to freeze
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Emscripten
+        run: |
+          git clone --depth 1 https://github.com/emscripten-core/emsdk.git "$RUNNER_TEMP/emsdk"
+          "$RUNNER_TEMP/emsdk/emsdk" install "$EMSDK_VERSION"
+          "$RUNNER_TEMP/emsdk/emsdk" activate "$EMSDK_VERSION"
+
+      - name: Configure and build
+        run: |
+          source "$RUNNER_TEMP/emsdk/emsdk_env.sh"
+          emcc --version | head -n 1
+          emcmake cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DNIMBLE_BUNDLE_SDL=ON
+          cmake --build build --parallel
+
+      - name: Package
+        run: |
+          VERSION="${GITHUB_REF_NAME//\//-}"
+          NAME="NimbleWood-${VERSION}-web"
+          cmake --install build --prefix "stage/${NAME}"
+          mkdir -p release
+          cd stage
+          cmake -E tar cf "../release/${NAME}.zip" --format=zip -- "${NAME}"
+          cd ..
+          ls -l release stage/"${NAME}"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: NimbleWood-web
+          path: release/*
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------------
+  # Android: Gradle + CMake, SDL3 from the official SDL .aar -> APK
+  # ---------------------------------------------------------------------------
+  build-android:
+    name: Build android
+    runs-on: ubuntu-24.04
+    env:
+      GRADLE_VERSION: "8.7"   # must match the Android Gradle Plugin version in android/build.gradle
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Select JDK 17
+        run: echo "JAVA_HOME=$JAVA_HOME_17_X64" >> "$GITHUB_ENV"
+
+      - name: Download SDL3 Android archive
+        run: |
+          # Same SDL version as the other platforms (NIMBLE_SDL_TAG in CMakeLists.txt)
+          SDL_VERSION=$(sed -n 's/.*NIMBLE_SDL_TAG "release-\([0-9.]*\)".*/\1/p' CMakeLists.txt)
+          test -n "$SDL_VERSION"
+          curl -fsSL -o sdl-android.zip \
+            "https://github.com/libsdl-org/SDL/releases/download/release-${SDL_VERSION}/SDL3-devel-${SDL_VERSION}-android.zip"
+          unzip -q sdl-android.zip -d sdl-android
+          AAR=$(find sdl-android -name '*.aar' | head -n 1)
+          test -n "$AAR"
+          mkdir -p android/app/libs
+          cp "$AAR" android/app/libs/SDL3.aar
+          ls -l android/app/libs
+
+      - name: Install Gradle
+        run: |
+          curl -fsSL -o gradle.zip "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip"
+          unzip -q gradle.zip -d "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/gradle-${GRADLE_VERSION}/bin" >> "$GITHUB_PATH"
+
+      - name: Prepare Android SDK and debug keystore
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+          mkdir -p ~/.android
+          if [ ! -f ~/.android/debug.keystore ]; then
+            keytool -genkeypair -keystore ~/.android/debug.keystore -storepass android \
+              -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=Android Debug,O=Android,C=US"
+          fi
+
+      - name: Build APK
+        run: |
+          VERSION="${GITHUB_REF_NAME//\//-}"
+          gradle -p android assembleRelease --no-daemon --stacktrace \
+            -PappVersion="${VERSION#v}" -PappVersionCode="${{ github.run_number }}"
+
+      - name: Package
+        run: |
+          VERSION="${GITHUB_REF_NAME//\//-}"
+          mkdir -p release
+          cp android/app/build/outputs/apk/release/app-release.apk "release/NimbleWood-${VERSION}-android.apk"
+          ls -l release
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: NimbleWood-android
+          path: release/*
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------------
+  # iOS: CMake + Xcode, unsigned .ipa (needs re-signing to install on a device)
+  # ---------------------------------------------------------------------------
+  build-ios:
+    name: Build ios
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Configure
+        run: |
+          cmake -S . -B build -G Xcode \
+            -DCMAKE_SYSTEM_NAME=iOS \
+            -DCMAKE_OSX_SYSROOT=iphoneos \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=13.0 \
+            -DNIMBLE_BUNDLE_SDL=ON \
+            -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO \
+            -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO \
+            -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY=""
+
+      - name: Build
+        run: cmake --build build --config Release --target NimbleWood --parallel
+
+      - name: Package
+        run: |
+          VERSION="${GITHUB_REF_NAME//\//-}"
+          APP=$(find build -type d -name NimbleWood.app -path '*Release-iphoneos*' | head -n 1)
+          test -n "$APP"
+          lipo -info "$APP/NimbleWood"
+          mkdir -p ipa/Payload release
+          cp -R "$APP" ipa/Payload/
+          (cd ipa && zip -qry "../release/NimbleWood-${VERSION}-ios-unsigned.ipa" Payload)
+          ls -l release
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: NimbleWood-ios
+          path: release/*
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------------
+  # Publish (tags only)
+  # ---------------------------------------------------------------------------
+  release:
+    name: Publish GitHub Release
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [build, build-web, build-android, build-ios]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: NimbleWood-*
+          path: release
+          merge-multiple: true
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        run: |
+          cd release
+          sha256sum * > SHA256SUMS.txt
+          cd ..
+          PRE=""
+          if [[ "$GITHUB_REF_NAME" == *-* ]]; then PRE="--prerelease"; fi
+          gh release create "$GITHUB_REF_NAME" release/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Nimble Wood $GITHUB_REF_NAME" \
+            --generate-notes $PRE

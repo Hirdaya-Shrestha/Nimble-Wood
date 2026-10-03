@@ -1,0 +1,59 @@
+apply plugin: 'com.android.application'
+
+// CI passes these from the git tag / run number; the defaults are for local builds.
+def appVersionCode = (project.findProperty('appVersionCode') ?: '1').toString().toInteger()
+def appVersionName = (project.findProperty('appVersion') ?: '0.1.0').toString()
+
+android {
+    namespace 'dev.nimblewood.game'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'dev.nimblewood.game'
+        minSdk 21
+        targetSdk 35
+        versionCode appVersionCode
+        versionName appVersionName
+
+        externalNativeBuild {
+            cmake {
+                arguments '-DANDROID_STL=c++_static', '-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON'
+                abiFilters 'arm64-v8a', 'armeabi-v7a', 'x86_64'
+            }
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path '../../CMakeLists.txt'   // the repo's top-level CMakeLists.txt
+        }
+    }
+
+    buildFeatures {
+        prefab true                       // exposes SDL3 from the .aar to CMake
+    }
+
+    sourceSets {
+        main {
+            assets.srcDirs = ['../../assets']
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            // Signed with the debug key so the APK is installable for testing.
+            // Replace with your own signingConfig before publishing to a store.
+            signingConfig signingConfigs.debug
+        }
+    }
+
+    lint {
+        checkReleaseBuilds false
+    }
+}
+
+dependencies {
+    // SDL3-devel-<version>-android.zip contains the .aar; CI (or you) copies it here.
+    implementation files('libs/SDL3.aar')
+}

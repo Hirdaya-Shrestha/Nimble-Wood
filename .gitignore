@@ -1,0 +1,25 @@
+# Build output
+build/
+out/
+cmake-build-*/
+stage/
+release/
+
+# IDE / editor
+.vscode/
+.idea/
+.cache/
+compile_commands.json
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Android
+android/.gradle/
+android/build/
+android/app/build/
+android/app/.cxx/
+android/local.properties
+android/app/libs/*.aar

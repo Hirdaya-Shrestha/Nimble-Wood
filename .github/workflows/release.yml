@@ -145,18 +145,24 @@ jobs:
       - name: Select JDK 17
         run: echo "JAVA_HOME=$JAVA_HOME_17_X64" >> "$GITHUB_ENV"
 
-      - name: Download SDL3 Android archive
+      - name: Download SDL3 and SDL3_image Android archives
         run: |
-          # Same SDL version as the other platforms (NIMBLE_SDL_TAG in CMakeLists.txt)
+          # Same versions as the other platforms (NIMBLE_SDL_TAG / NIMBLE_SDL_IMAGE_TAG in CMakeLists.txt)
           SDL_VERSION=$(sed -n 's/.*NIMBLE_SDL_TAG "release-\([0-9.]*\)".*/\1/p' CMakeLists.txt)
-          test -n "$SDL_VERSION"
+          IMG_VERSION=$(sed -n 's/.*NIMBLE_SDL_IMAGE_TAG "release-\([0-9.]*\)".*/\1/p' CMakeLists.txt)
+          test -n "$SDL_VERSION" && test -n "$IMG_VERSION"
+          mkdir -p android/app/libs
           curl -fsSL -o sdl-android.zip \
             "https://github.com/libsdl-org/SDL/releases/download/release-${SDL_VERSION}/SDL3-devel-${SDL_VERSION}-android.zip"
+          curl -fsSL -o sdl-image-android.zip \
+            "https://github.com/libsdl-org/SDL_image/releases/download/release-${IMG_VERSION}/SDL3_image-devel-${IMG_VERSION}-android.zip"
           unzip -q sdl-android.zip -d sdl-android
+          unzip -q sdl-image-android.zip -d sdl-image-android
           AAR=$(find sdl-android -name '*.aar' | head -n 1)
-          test -n "$AAR"
-          mkdir -p android/app/libs
+          IMG_AAR=$(find sdl-image-android -name '*.aar' | head -n 1)
+          test -n "$AAR" && test -n "$IMG_AAR"
           cp "$AAR" android/app/libs/SDL3.aar
+          cp "$IMG_AAR" android/app/libs/SDL3_image.aar
           ls -l android/app/libs
 
       - name: Install Gradle

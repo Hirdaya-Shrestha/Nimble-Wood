@@ -56,4 +56,5 @@ android {
 dependencies {
     // SDL3-devel-<version>-android.zip contains the .aar; CI (or you) copies it here.
     implementation files('libs/SDL3.aar')
+    implementation files('libs/SDL3_image.aar')
 }

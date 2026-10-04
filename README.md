@@ -1,33 +1,70 @@
-# Nimble Wood
+<p align="center">
+    <img src="https://raw.githubusercontent.com/Hirdaya-Shrestha/Nimble-Wood/main/assets/logo.png" height="150" width="150" alt="Nimble-Wood">
+</p>
+<h1 align="center">Nimble Wood</h1>
 
-A 2D platformer written in C++17 with [SDL3](https://libsdl.org). Currently an empty, working skeleton: a resizable window, a fixed-timestep game loop and a square you can move with **A/D**, **←/→**, or by touching/clicking the left or right half of the screen. **Esc** quits on desktop.
+<p align="center">
+  A cross-platform 2D platformer written in C++17 with <a href="https://libsdl.org">SDL3</a>.<br>
+  One codebase for Linux, Windows, macOS, Android, iOS and the web.
+</p>
 
-Builds for **Linux (x64, arm64)**, **Windows (x64)**, **macOS (universal: Apple Silicon + Intel)**, **Android**, **iOS** and the **web** (WebAssembly).
+<p align="center">
+  <a href="https://github.com/Hirdaya-Shrestha/Nimble-Wood/actions/workflows/release.yml"><img alt="Release workflow" src="https://github.com/Hirdaya-Shrestha/Nimble-Wood/actions/workflows/release.yml/badge.svg"></a>
+  <a href="https://github.com/Hirdaya-Shrestha/Nimble-Wood/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/Hirdaya-Shrestha/Nimble-Wood"></a>
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
+</p>
 
-## Project layout
+---
 
-```
-.
-├── CMakeLists.txt                 # build definition (all platforms)
-├── src/main.cpp                   # game entry point (SDL main callbacks)
-├── assets/                        # game assets (packaged into releases)
-├── android/                       # Gradle project that wraps the CMake build into an APK
-├── platform/ios/Info.plist.in     # iOS app metadata
-├── .github/workflows/release.yml  # build + publish on tag
-├── LICENSE
-└── README.md
-```
+## Overview
 
-## Requirements
+Nimble Wood is at an early stage: the repository is a clean, working foundation with a resizable window, a fixed-timestep game loop and a controllable placeholder character. Everything needed to build and ship for every platform is already in place, so game development can focus on gameplay.
+
+**Highlights**
+
+- Small, dependency-light codebase: C++17, CMake and SDL3 only
+- A single entry point built on SDL's main callbacks, shared by desktop, mobile and web
+- Self-contained release builds (SDL3 linked statically)
+- Tag-triggered CI that builds and publishes every platform
+
+## Platforms
+
+| Platform | Architectures                                | Release artifact                                |
+| -------- | -------------------------------------------- | ----------------------------------------------- |
+| Linux    | x86-64, arm64                                | `.tar.gz`                                       |
+| Windows  | x86-64                                       | `.zip`                                          |
+| macOS    | Universal (Apple Silicon + Intel), macOS 11+ | `.tar.gz`                                       |
+| Android  | arm64-v8a, armeabi-v7a, x86_64 (API 21+)     | `.apk`                                          |
+| iOS      | arm64 (iOS 13+)                              | `.ipa` (unsigned)                               |
+| Web      | WebAssembly                                  | `.zip` (`index.html`, `index.js`, `index.wasm`) |
+
+## Download
+
+Pre-built packages for every platform are on the [Releases](../../releases) page, together with a `SHA256SUMS.txt` file for verifying downloads.
+
+> Binaries are not code-signed. Windows SmartScreen and macOS Gatekeeper may warn on first launch, and the iOS package must be re-signed before it can be installed. See [Platform notes](#platform-notes).
+
+## Controls
+
+| Input                                           | Action            |
+| ----------------------------------------------- | ----------------- |
+| `A` / `D` or `←` / `→`                          | Move              |
+| Touch or click, left / right half of the screen | Move left / right |
+| `Esc`                                           | Quit (desktop)    |
+
+## Building from source
+
+### Requirements
 
 - A C++17 compiler (GCC, Clang or MSVC)
-- CMake 3.16 or newer
-- Git (only needed when SDL3 is built from source)
-- SDL3 3.2 or newer, **optional**: if it is not installed, CMake downloads and builds a pinned version automatically (see [Build options](#build-options))
+- [CMake](https://cmake.org) 3.16 or newer
+- Git (only when SDL3 is built from source)
+- SDL3 3.2 or newer, **optional**: if it is not installed, CMake downloads and builds a pinned version automatically
 
-## Build locally
+### Linux
 
-### Arch Linux
+<details open>
+<summary><b>Arch Linux</b></summary>
 
 ```bash
 sudo pacman -S --needed base-devel cmake ninja git sdl3
@@ -37,9 +74,12 @@ cmake --build build
 ./build/NimbleWood
 ```
 
-### Debian / Ubuntu
+</details>
 
-The distro SDL3 package may be missing or too old, so build SDL3 from source (needs the dev packages below):
+<details>
+<summary><b>Debian / Ubuntu</b></summary>
+
+Distribution SDL3 packages may be missing or too old, so build SDL3 from source. It needs the development packages below.
 
 ```bash
 sudo apt-get install -y build-essential cmake ninja-build pkg-config git \
@@ -56,21 +96,46 @@ cmake --build build
 ./build/NimbleWood
 ```
 
-### Fedora
+</details>
+
+<details>
+<summary><b>Fedora</b></summary>
 
 ```bash
 sudo dnf install cmake ninja-build gcc-c++ git SDL3-devel
-cmake -S . -B build -G Ninja && cmake --build build && ./build/NimbleWood
+
+cmake -S . -B build -G Ninja
+cmake --build build
+./build/NimbleWood
 ```
+
+</details>
 
 ### macOS
 
 ```bash
 brew install cmake ninja sdl3
-cmake -S . -B build -G Ninja && cmake --build build && ./build/NimbleWood
+
+cmake -S . -B build -G Ninja
+cmake --build build
+./build/NimbleWood
 ```
 
-### Windows (Visual Studio 2022 or newer, with the "Desktop development with C++" workload)
+### Windows
+
+Choose one of the two toolchains.
+
+<details open>
+<summary><b>Option A: Visual Studio (MSVC)</b></summary>
+
+Install Visual Studio 2022 or newer with the **Desktop development with C++** workload. If Visual Studio is already installed, open the _Visual Studio Installer_, choose _Modify_ and tick that workload. From a terminal, the same can be done with:
+
+```powershell
+winget install --id Microsoft.VisualStudio.2022.Community --override "--wait --passive --add Microsoft.VisualStudio.Workload.NativeDesktop --includeRecommended"
+winget install --id Git.Git
+```
+
+Then open **Developer PowerShell for VS** from the Start menu and run:
 
 ```powershell
 cmake -S . -B build -DNIMBLE_BUNDLE_SDL=ON
@@ -78,9 +143,25 @@ cmake --build build --config Release
 .\build\Release\NimbleWood.exe
 ```
 
-## Build for mobile and web
+This is the same toolchain the release builds use.
+</details>
 
-CI builds all of these automatically (see [Releasing](#releasing)); the steps below are for building them yourself.
+<details>
+<summary><b>Option B: MSYS2 (MinGW-w64), command line only</b></summary>
+
+Install [MSYS2](https://www.msys2.org/), open the **MSYS2 UCRT64** shell and run:
+
+```bash
+pacman -S --needed git mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-ninja \
+  mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-sdl3
+
+cmake -S . -B build -G Ninja
+cmake --build build
+./build/NimbleWood.exe
+```
+
+This uses MSYS2's SDL3, so `SDL3.dll` must be found: run from the UCRT64 shell, or copy `/ucrt64/bin/SDL3.dll` next to the `.exe`. For a standalone `.exe`, add `-DNIMBLE_BUNDLE_SDL=ON` to the first `cmake` command.
+</details>
 
 ### Web (WebAssembly)
 
@@ -89,27 +170,29 @@ Install [Emscripten](https://emscripten.org/docs/getting_started/downloads.html)
 ```bash
 emcmake cmake -S . -B build-web -DCMAKE_BUILD_TYPE=Release
 cmake --build build-web
-cd build-web && python3 -m http.server 8080   # open http://localhost:8080/index.html
+cd build-web && python3 -m http.server 8080    # open http://localhost:8080/index.html
 ```
 
-The output is `index.html`, `index.js` and `index.wasm`; upload the three files to any static host (GitHub Pages, itch.io HTML5, Netlify, ...). Browsers refuse to load `.wasm` from `file://`, so always test through a local server.
+Browsers refuse to load `.wasm` files from `file://`, so always test through a local server.
 
 ### Android
 
-Requirements: Android SDK with NDK and CMake (easiest through Android Studio), JDK 17, and Gradle 8.7.
+Requirements: Android SDK with NDK and CMake (easiest through Android Studio), JDK 17 and Gradle 8.7.
 
-1. Download `SDL3-devel-<version>-android.zip` from the [SDL releases](https://github.com/libsdl-org/SDL/releases) (use the version in `NIMBLE_SDL_TAG`), extract the `.aar` inside and save it as `android/app/libs/SDL3.aar`.
-2. Build and install on a connected device or emulator:
+1. Download `SDL3-devel-<version>-android.zip` from the [SDL releases](https://github.com/libsdl-org/SDL/releases) (the version is `NIMBLE_SDL_TAG` in `CMakeLists.txt`), extract the `.aar` inside and save it as `android/app/libs/SDL3.aar`.
+2. Build and install on a device or emulator:
 
 ```bash
 cd android
-gradle wrapper --gradle-version 8.7     # one time, creates ./gradlew (commit it if you like)
-./gradlew installDebug                  # or assembleRelease -> app/build/outputs/apk/release/
+gradle wrapper --gradle-version 8.7     # one time, creates ./gradlew
+./gradlew installDebug                  # or: ./gradlew assembleRelease
 ```
 
-You can also open the `android/` folder in Android Studio. The Android build uses the prebuilt SDL from the `.aar`, not the source build.
+The `android/` folder can also be opened directly in Android Studio. The Android build uses the prebuilt SDL from the `.aar` rather than building it from source.
 
-### iOS (needs a Mac with Xcode)
+### iOS
+
+Requires a Mac with Xcode.
 
 ```bash
 cmake -S . -B build-ios -G Xcode \
@@ -118,63 +201,78 @@ cmake -S . -B build-ios -G Xcode \
 open build-ios/NimbleWood.xcodeproj
 ```
 
-In Xcode select the `NimbleWood` target, set your **Team** under *Signing & Capabilities*, pick a device or simulator and run. For the simulator use `-DCMAKE_OSX_SYSROOT=iphonesimulator` instead.
+In Xcode, select the `NimbleWood` target, set your **Team** under _Signing & Capabilities_, choose a device or simulator and run. For the simulator, use `-DCMAKE_OSX_SYSROOT=iphonesimulator`.
 
-## Build options
+### Build options
 
-| Option | Default | Meaning |
-|---|---|---|
-| `NIMBLE_BUNDLE_SDL` | `OFF` | `ON` always builds SDL3 from source and links it statically (self-contained binary). `OFF` uses the installed SDL3 and falls back to building it if none is found. |
-| `NIMBLE_SDL_TAG` | `release-3.4.16` | SDL git tag used when SDL is built from source. |
-| `CMAKE_BUILD_TYPE` | `Release` | `Debug` or `Release` (single-config generators). |
+| Option              | Default          | Description                                                                                                                                                                                       |
+| ------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `NIMBLE_BUNDLE_SDL` | `OFF`            | `ON` always builds SDL3 from source and links it statically, producing a self-contained binary. `OFF` uses an installed SDL3 and builds one only if none is found. iOS and web always build SDL3. |
+| `NIMBLE_SDL_TAG`    | `release-3.4.16` | SDL git tag used when SDL3 is built from source. Also selects the Android `.aar` in CI.                                                                                                           |
+| `CMAKE_BUILD_TYPE`  | `Release`        | `Debug` or `Release` (single-configuration generators).                                                                                                                                           |
 
-Example: `cmake -S . -B build -DNIMBLE_BUNDLE_SDL=ON -DNIMBLE_SDL_TAG=release-3.x.y`
+## Project structure
+
+```
+.
+├── CMakeLists.txt                  Build definition for all platforms
+├── src/main.cpp                    Game entry point (SDL main callbacks)
+├── assets/                         Game assets, packaged into releases
+├── android/                        Gradle project wrapping the CMake build into an APK
+├── platform/ios/Info.plist.in      iOS app metadata
+└── .github/workflows/
+    ├── release.yml                 Build and publish all platforms on tag
+    └── pages.yml                   Publish the web build to GitHub Pages
+```
 
 ## Releasing
 
-Releases are built by [`release.yml`](.github/workflows/release.yml) whenever a tag starting with `v` is pushed:
+[`release.yml`](.github/workflows/release.yml) runs when a tag starting with `v` is pushed:
 
 ```bash
-git tag v0.0.1
-git push origin v0.0.1
+git tag v0.1.0
+git push origin v0.1.0
 ```
 
-The workflow then:
+It builds every platform in parallel, creates a GitHub Release with all packages, a `SHA256SUMS.txt` and generated release notes, and marks tags containing a `-` (for example `v0.2.0-beta.1`) as pre-releases. If any platform fails to build, nothing is published.
 
-1. Builds seven artifacts in parallel:
+| Artifact          | Runner                                                    |
+| ----------------- | --------------------------------------------------------- |
+| `linux-x64`       | `ubuntu-24.04`                                            |
+| `linux-arm64`     | `ubuntu-24.04-arm`                                        |
+| `windows-x64`     | `windows-latest` (MSVC, static runtime)                   |
+| `macos-universal` | `macos-latest` (arm64 + x86_64)                           |
+| `web`             | `ubuntu-24.04` with Emscripten                            |
+| `android`         | `ubuntu-24.04` with Gradle 8.7, JDK 17 and the SDL `.aar` |
+| `ios`             | `macos-latest` with Xcode                                 |
 
-   | Artifact | Runner | Output |
-   |---|---|---|
-   | `linux-x64` | `ubuntu-24.04` | `.tar.gz` |
-   | `linux-arm64` | `ubuntu-24.04-arm` | `.tar.gz` |
-   | `windows-x64` | `windows-latest` (MSVC, static runtime) | `.zip` |
-   | `macos-universal` | `macos-latest` (arm64 + x86_64, macOS 11+) | `.tar.gz` |
-   | `web` | `ubuntu-24.04` + Emscripten | `.zip` (`index.html/js/wasm`) |
-   | `android` | `ubuntu-24.04` + Gradle 8.7, JDK 17, SDL `.aar` | `.apk` (arm64-v8a, armeabi-v7a, x86_64) |
-   | `ios` | `macos-latest` + Xcode | `-ios-unsigned.ipa` (arm64, iOS 13+) |
+The workflow can also be started manually from the **Actions** tab (**Run workflow**). That builds every platform and uploads the packages as workflow artifacts without creating a release, which is useful for testing.
 
-2. Packages desktop and web builds with `assets/`, `README.md` and `LICENSE`.
-3. Creates a GitHub Release for the tag with all files, a `SHA256SUMS.txt` and auto-generated notes. If any platform fails to build, nothing is published. Tags containing a `-` (for example `v0.2.0-beta.1`) are marked as pre-releases.
+To update SDL, change the default of `NIMBLE_SDL_TAG` in `CMakeLists.txt` to a newer `release-3.x.y` tag from the [SDL releases](https://github.com/libsdl-org/SDL/releases). It is the only place to change; CI reads it to select the matching Android `.aar`. Even minor versions (3.2.x, 3.4.x) are stable releases.
 
-You can also run the workflow manually from the **Actions** tab (**Run workflow**). That builds every platform and uploads the archives as workflow artifacts without creating a release, which is handy for testing.
+### Platform notes
 
-Notes:
-
-- `ubuntu-24.04-arm` runners are free for **public** repositories only. For a private repo, remove that matrix entry.
-- Linux binaries are built on Ubuntu 24.04, so they need glibc 2.39 or newer (Ubuntu 24.04+, Fedora 40+, current Arch). SDL loads X11, Wayland, audio, etc. at runtime, so no SDL packages are needed to run the game.
-- **Android**: the APK is signed with the debug key, so it installs for testing (`adb install` or tap the file after allowing "unknown sources") but cannot go to the Play Store. For a store release, add your own keystore to `android/app/build.gradle` and build an `.aab` (`bundleRelease`).
-- **iOS**: the `.ipa` is **unsigned** because signing needs an Apple Developer account. It proves the iOS build works; to run it, re-sign it with a tool such as Sideloadly or AltStore, or build from Xcode with your own team (see above). To publish through TestFlight or the App Store, add signing certificates and a provisioning profile as repository secrets and extend the `build-ios` job.
-- **Web**: unzip and host the three files, or try it locally with `python3 -m http.server`.
-- Downloaded macOS and Windows binaries are unsigned. macOS: run `xattr -dr com.apple.quarantine NimbleWood-*` once after extracting. Windows: SmartScreen may show a warning, choose "More info" then "Run anyway".
-
-## Updating SDL
-
-Change the default of `NIMBLE_SDL_TAG` in `CMakeLists.txt` to a newer `release-3.x.y` tag from the [SDL releases](https://github.com/libsdl-org/SDL/releases). Even minor numbers (3.2.x, 3.4.x) are stable releases. CI also reads this value to pick the matching Android `.aar`, so it is the only place to change.
+- **Linux** binaries are built on Ubuntu 24.04 and need glibc 2.39 or newer. SDL loads X11, Wayland and audio libraries at runtime, so no SDL packages are needed to run the game. The `linux-arm64` runner is free for public repositories only; for a private repository, remove that matrix entry.
+- **Windows**: SmartScreen may show a warning. Choose _More info_, then _Run anyway_.
+- **macOS**: after extracting, run `xattr -dr com.apple.quarantine NimbleWood-*` once to clear the Gatekeeper quarantine flag.
+- **Android**: the APK is signed with the debug key, so it installs for testing but cannot be published to a store. For a store release, add your own keystore to `android/app/build.gradle` and build an `.aab` with `bundleRelease`.
+- **iOS**: the `.ipa` is unsigned because signing requires an Apple Developer account. Re-sign it with a tool such as Sideloadly or AltStore, or build from Xcode with your own team. For TestFlight or App Store delivery, add signing certificates and a provisioning profile as repository secrets and extend the `build-ios` job.
+- **Web**: unzip and host the three files, or publish them on GitHub Pages as described below.
 
 ## Roadmap
 
-Tilemap loading, player physics, sprites and audio. For those, add `SDL3_image` / `SDL3_mixer` the same way SDL3 is added in `CMakeLists.txt`. Assets are packaged for desktop, web-hosting and Android already; for iOS they still need to be added to the app bundle (`MACOSX_PACKAGE_LOCATION`) and for the web they can be embedded with Emscripten's `--preload-file assets`.
+- Tilemap loading and level format
+- Player physics (gravity, jumping, collision)
+- Sprites and animation (`SDL3_image`)
+- Audio (`SDL3_mixer`)
+- Asset packaging for iOS (app bundle resources) and the web (Emscripten `--preload-file`)
+
+Additional SDL libraries can be added the same way SDL3 is added in `CMakeLists.txt`.
+
+## Contributing
+
+Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) first. To report a security issue, follow [SECURITY.md](SECURITY.md) and do not open a public issue.
 
 ## License
 
-MIT, see [LICENSE](LICENSE).
+Released under the [MIT License](LICENSE).

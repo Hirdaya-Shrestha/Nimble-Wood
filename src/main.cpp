@@ -4,7 +4,7 @@
 // keys, or by touching/clicking the left or right half of the screen. Esc quits
 // (desktop).
 
-#define NIMBLE_VERSION "0.0.1"
+// #define NIMBLE_VERSION "0.0.1"
 #define SDL_MAIN_USE_CALLBACKS 1
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h> // must be included in the file that defines the entry points

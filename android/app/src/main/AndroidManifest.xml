@@ -10,6 +10,8 @@
         android:label="Nimble Wood"
         android:allowBackup="true"
         android:hardwareAccelerated="true"
+        android:usesCleartextTraffic="true"
+        android:icon="@mipmap/ic_launcher"
         android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
 
         <!-- SDLActivity comes from the SDL3 .aar and loads libSDL3.so then libmain.so. -->

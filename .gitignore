@@ -23,3 +23,5 @@ android/app/build/
 android/app/.cxx/
 android/local.properties
 android/app/libs/*.aar
+android/gradle/
+android/gradlew*

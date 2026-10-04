@@ -265,3 +265,16 @@ jobs:
             --repo "$GITHUB_REPOSITORY" \
             --title "Nimble Wood $GITHUB_REF_NAME" \
             --generate-notes $PRE
+
+  # ---------------------------------------------------------------------------
+  # Deploy web to GitHub Pages
+  # ---------------------------------------------------------------------------
+  pages:
+    needs: release
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/pages.yml
+    with:
+      tag: ${{ github.ref_name }}

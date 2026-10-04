@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(NimbleWood VERSION 0.0.1 LANGUAGES CXX)
+project(NimbleWood VERSION 0.0.2 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -74,6 +74,10 @@ endif()
 if(WIN32)
   # GUI app: no console window (SDL_main.h provides WinMain).
   set_target_properties(NimbleWood PROPERTIES WIN32_EXECUTABLE ON)
+  if(MINGW)
+    # No libstdc++/libgcc/winpthread DLLs needed next to the .exe.
+    target_link_options(NimbleWood PRIVATE -static)
+  endif()
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   # Fewer runtime dependencies on the target distro.
   target_link_options(NimbleWood PRIVATE -static-libstdc++ -static-libgcc)

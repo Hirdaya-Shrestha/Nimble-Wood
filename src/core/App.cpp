@@ -57,7 +57,7 @@ bool App::initialize() {
     SDL_Surface* iconSurface = SDL_CreateSurfaceFrom(
         kIconSize,
         kIconSize,
-        SDL_PIXELFORMAT_RGBA8888,
+        SDL_PIXELFORMAT_RGBA32,
         const_cast<unsigned char*>(kIconRGBA),
         kIconSize * 4
     );
@@ -78,8 +78,10 @@ bool App::initialize() {
 
     m_splash = new Splash(m_renderer);
 
-    if (!m_splash->load("assets/logo.png")) {
-        return false;
+    const bool hasSplash = m_splash->load("assets/logo.png");
+
+    if (!hasSplash) {
+        SDL_Log("Splash image not available, skipping the splash screen.");
     }
 
     m_gameRenderer = new Renderer(m_renderer);
@@ -89,7 +91,7 @@ bool App::initialize() {
         return false;
     }
 
-    m_state = GameState::Splash;
+    m_state = hasSplash ? GameState::Splash : GameState::Game;
     m_accumulator = 0.0;
 
     SDL_Log("Nimble Wood initialized.");

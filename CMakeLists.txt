@@ -346,6 +346,11 @@ elseif(IOS)
       MACOSX_PACKAGE_LOCATION Resources
   )
 
+  add_custom_command(TARGET NimbleWood POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      "${CMAKE_CURRENT_SOURCE_DIR}/assets"
+      "$<TARGET_BUNDLE_DIR:NimbleWood>/assets")
+
 elseif(APPLE)
 
   # macOS application bundle.
@@ -391,6 +396,11 @@ elseif(APPLE)
         "${PROJECT_VERSION}"
   )
 
+  add_custom_command(TARGET NimbleWood POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      "${CMAKE_CURRENT_SOURCE_DIR}/assets"
+      "$<TARGET_BUNDLE_CONTENT_DIR:NimbleWood>/Resources/assets")
+
 elseif(EMSCRIPTEN)
 
   # Produces:
@@ -411,6 +421,7 @@ elseif(EMSCRIPTEN)
     NimbleWood
     PRIVATE
       -sALLOW_MEMORY_GROWTH=1
+      "SHELL:--preload-file ${CMAKE_CURRENT_SOURCE_DIR}/assets@/assets"
   )
 
   add_custom_command(
@@ -475,6 +486,7 @@ if(NOT ANDROID)
       FILES
         "$<TARGET_FILE_DIR:NimbleWood>/index.js"
         "$<TARGET_FILE_DIR:NimbleWood>/index.wasm"
+        "$<TARGET_FILE_DIR:NimbleWood>/index.data"
         "$<TARGET_FILE_DIR:NimbleWood>/favicon.png"
       DESTINATION .
     )

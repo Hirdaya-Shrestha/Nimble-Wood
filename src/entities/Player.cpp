@@ -1,9 +1,8 @@
 #include "entities/Player.hpp"
 
 #include <SDL3/SDL.h>
-#include <SDL3_image/SDL_image.h>
+#include "core/Assets.hpp"
 #include <cmath>
-#include <cstdlib>
 
 #include "core/Config.hpp"
 
@@ -26,7 +25,7 @@ std::vector<SDL_Texture*> LoadAnimationFrames(
       filename += "_" + std::to_string(i);
     }
     filename += ".png";
-    SDL_Texture* tex = IMG_LoadTexture(renderer, filename.c_str());
+    SDL_Texture* tex = loadTexture(renderer, filename);
     if (tex) {
       frames.push_back(tex);
     } else {

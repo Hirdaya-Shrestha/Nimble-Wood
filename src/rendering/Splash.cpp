@@ -1,8 +1,8 @@
 #include "rendering/Splash.hpp"
 
 #include <SDL3/SDL.h>
-#include <SDL3_image/SDL_image.h>
 
+#include "core/Assets.hpp"
 #include "core/Config.hpp"
 
 namespace NimbleWood {
@@ -18,21 +18,8 @@ Splash::~Splash() {
 }
 
 bool Splash::load(const char* path) {
-    m_texture = IMG_LoadTexture(
-        m_renderer,
-        path
-    );
-
-    if (!m_texture) {
-        SDL_Log(
-            "Failed to load splash image: %s",
-            SDL_GetError()
-        );
-
-        return false;
-    }
-
-    return true;
+    m_texture = loadTexture(m_renderer, path);
+    return m_texture != nullptr;
 }
 
 void Splash::update(double dt) {

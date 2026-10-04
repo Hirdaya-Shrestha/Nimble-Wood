@@ -33,11 +33,6 @@ android {
         prefab true                       // exposes SDL3 from the .aar to CMake
     }
 
-    sourceSets {
-        main {
-            assets.srcDirs = ['../../assets']
-        }
-    }
 
     buildTypes {
         release {
@@ -52,6 +47,16 @@ android {
         checkReleaseBuilds false
     }
 }
+
+
+// Package the repo's assets/ folder as "assets/..." so the same paths work on every platform.
+def generatedAssets = layout.buildDirectory.dir('generated/nimble-assets')
+tasks.register('copyNimbleAssets', Copy) {
+    from '../../assets'
+    into generatedAssets.map { it.dir('assets') }
+}
+android.sourceSets.main.assets.srcDir(generatedAssets.get().asFile)
+tasks.matching { it.name == 'preBuild' }.configureEach { dependsOn 'copyNimbleAssets' }
 
 dependencies {
     // SDL3-devel-<version>-android.zip contains the .aar; CI (or you) copies it here.
